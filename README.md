@@ -13,3 +13,4 @@ set for the current market.
 
 ## More
 [DEMO](https://nyu-vis-fall2018.github.io/storytelling-group-6/)
+[Project Descrioption](project.pdf)
