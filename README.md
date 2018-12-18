@@ -1,11 +1,9 @@
 
-# storytelling-group-6
-storytelling-group-6-inclass-gourp-7-online created by GitHub Classroom
-
-Title：A Hot App is Born - Visualize Google Play Store Data
+# A Hot App is Born - Visualize Google Play Store Data
 
 **Authors**:
 Yijun Chen(yc3166),Chaochen Wu(cw2661),Qi Sun(qs479,Online）
+![Screenhot](screenshot.jpg)
 
 Description:
 In our project, we assume there’s a company wants to develop a mobile App which will create great benefits. 
