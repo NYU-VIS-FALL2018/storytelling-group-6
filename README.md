@@ -3,6 +3,7 @@
 
 **Authors**:
 Yijun Chen(yc3166), Chaochen Wu(cw2661), Qi Sun(qs479, Online）
+
 ![Screenhot](screenshot.jpg)
 
 ## About
@@ -13,4 +14,5 @@ set for the current market.
 
 ## More
 [DEMO](https://nyu-vis-fall2018.github.io/storytelling-group-6/)
-[Project Descrioption](project.pdf)
+
+[Project Description](project.pdf)
