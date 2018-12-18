@@ -2,7 +2,7 @@
 # A Hot App is Born - Visualize Google Play Store Data
 
 **Authors**:
-Yijun Chen(yc3166),Chaochen Wu(cw2661),Qi Sun(qs479,Online）
+Yijun Chen(yc3166), Chaochen Wu(cw2661), Qi Sun(qs479, Online）
 ![Screenhot](screenshot.jpg)
 
 ## About
