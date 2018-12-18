@@ -1,689 +1,249 @@
-<html>
-
-	<head>
-		<style>
-			body {
-				font-family: Helvetica, Arial, sans-serif
-			}
-			
-			h1 {
-				background-color: #2a5599;
-				/* TODO 1
-            change the text to white and add a padding of 5px
-            2 lines of code
-            */
-				color: white;
-				padding: 5px;
-			}
-			/* TODO 2
-        Add code to show a black border of 1px around all SVGs elements in the page
-        1-3 lines of code
-        */
-			
-			svg {
-				border-style: solid;
-				border-width: 1px;
-				border-color: black;
-			}
-			/* TODO 3
-         - Use the "display flex" feature from to show the items from class `mainView` side by side 
-         1-3 lines of cide
-        */
-			
-			.mainView {
-				display: flex;
-			}
-		</style>
-		<script src="d3.js"></script>
-		<script src="echarts.min.js"></script>
-		<script src="dataTool.min.js"></script>
-	</head>
-
-	<body>
-		<h1>App Analysis</h1>
-		<div class="mainView">
-			<div>
-				<h2>Question 1</h2>
-				<svg id="Q1"></svg>
-			</div>
-			<div>
-				<h2>Question 2</h2>
-				<svg id="Q2"></svg>
-			</div>
-
-		</div>
-		<div class="mainView">
-
-			<div id="Q3" style="width: 800px;height:400px;"></div>
-
-		</div>
-
-		<div class="mainView">
-			<div>
-				<h2>Question 4</h2>
-				<svg id="Q4"></svg>
-			</div>
-			<div>
-				<h2>Question 5</h2>
-				<svg id="Q5"></svg>
-			</div>
-
-		</div>
-	</body>
-	<script>
-		let store = {}
-
-		function loadData() {
-			return Promise.all([
-				d3.csv("rating_aggre.csv"),
-				d3.csv("category_aggre.csv"),
-				d3.csv("size.csv"),
-				d3.csv("name.csv"),
-				d3.csv("price.csv")
-			]).then(datasets => {
-				store.rating = datasets[0];
-				store.category = datasets[1];
-				store.size = datasets[2];
-				store.name = datasets[3];
-				store.price = datasets[4];
-
-				return store;
-			})
-		}
-		// showing data
-		loadData().then(showData);
-
-		// showing data function
-		function showData() {
-			//Get the routes from our store variable
-			let rating = store.rating;
-			let category = store.category;
-			let size = store.size;
-			let name = store.name;
-			let price = store.price;
-			// Compute the number of routes per airline.
-			//let airlines = groupByAirline(store.routes);
-
-			// Draw airlines barchart
-			drawRatingChart(rating);
-			drawCategoryChart(category);
-			drawSizeChart(size);
-			drawNameChart(name);
-			drawPriceChart(price);
-			//Using the data saved on loadData
-			//drawMap(store.geoJSON) 
-
-			//let airports = groupByAirport(store.routes);
-			//drawAirports(airports)
-		}
-
-		// Q5
-		function drawPriceChart(price) {
-			let config = getPriceConfig();
-			let scales = getPriceScales(price, config);
-
-			drawDotPriceChart(price, scales, config);
-			drawAxesPriceChart(price, scales, config);
-		}
-
-		// Config for size
-		function getPriceConfig() {
-			let width = 400;
-			let height = 400;
-			let margin = {
-				top: 10,
-				bottom: 50,
-				left: 80,
-				right: 10
-			}
-			//The body is the are that will be occupied by the bars.
-			let bodyHeight = height - margin.top - margin.bottom
-			let bodyWidth = width - margin.left - margin.right
-
-			//The container is the SVG where we will draw the chart. In our HTML is the svg tah with the id AirlinesChart
-			let container = d3.select("#Q5")
-			container
-				.attr("width", width)
-			container
-				.attr("height", height)
-
-			return {
-				width,
-				height,
-				margin,
-				bodyHeight,
-				bodyWidth,
-				container
-			}
-		}
-
-		// get scale
-		function getPriceScales(price, config) {
-			let {
-				bodyWidth,
-				bodyHeight
-			} = config;
-			let maximunReview = d3.max(price.map(a => parseFloat(a["Reviews"])))
-
-			let yScale = d3.scaleLinear()
-				.range([bodyHeight, 0])
-				.domain([0, 200000])
-				
-			let maximunPrice = d3.max(price.map(a => parseFloat(a["Price_num"])))
-			let xScale = d3.scaleLinear()
-				.range([0, bodyWidth])
-				.domain([0, 40])
-			
-
-			return {
-				xScale,
-				yScale
-			}
-		}
-
-		// draw dot
-		function drawDotPriceChart(price, scales, config) {
-			let {
-				margin,
-				container
-			} = config;
-			let {
-				xScale,
-				yScale
-			} = scales
-			let circles = container.selectAll("circle");
-			circles.data(price)
-				.enter()
-				.append('circle')
-				.attr("r", 2)
-				.attr("cx", function(d) {
-					return xScale(parseFloat(d['Price_num']));
-				})
-				.attr("cy", function(d) {
-					return yScale(parseFloat(d['Reviews']));
-				})
-				.attr("fill", "#2a5599")
-				.style("transform",
-					`translate(${margin.left}px,${margin.top}px)`
-				)
-			
-		}
-		
-		// draw axes
-		function drawAxesPriceChart(price, scales, config) {
-			let {
-				xScale,
-				yScale
-			} = scales
-			let {
-				container,
-				margin,
-				height
-			} = config;
-			let axisX = d3.axisBottom(xScale)
-				.ticks(5)
-
-			container.append("g")
-				.style("transform",
-					`translate(${margin.left}px,${height - margin.bottom}px)`
-				)
-				.call(axisX)
-
-			let axisY = d3.axisLeft(yScale)
-
-			container.append("g")
-				.style("transform",
-					`translate(${margin.left}px,${margin.top}px)`
-				)
-				.call(axisY);
-		}
-
-		// Q4
-		function drawNameChart(name) {
-			let config = getNameConfig();
-			let scales = getNameScales(name, config);
-
-			drawLineNameChart(name, scales, config);
-			drawAxesNameChart(name, scales, config);
-		}
-
-		// Config for size
-		function getNameConfig() {
-			let width = 400;
-			let height = 400;
-			let margin = {
-				top: 10,
-				bottom: 50,
-				left: 80,
-				right: 10
-			}
-			//The body is the are that will be occupied by the bars.
-			let bodyHeight = height - margin.top - margin.bottom
-			let bodyWidth = width - margin.left - margin.right
-
-			//The container is the SVG where we will draw the chart. In our HTML is the svg tah with the id AirlinesChart
-			let container = d3.select("#Q4")
-			container
-				.attr("width", width)
-			container
-				.attr("height", height)
-
-			return {
-				width,
-				height,
-				margin,
-				bodyHeight,
-				bodyWidth,
-				container
-			}
-		}
-
-		// get scale
-		function getNameScales(rating, config) {
-			let {
-				bodyWidth,
-				bodyHeight
-			} = config;
-			let maximunCount = d3.max(rating.map(a => parseFloat(a["mean"])))
-
-			let yScale = d3.scaleLinear()
-				.range([bodyHeight, 0])
-				.domain([0, maximunCount])
-
-			let xScale = d3.scaleBand()
-				.range([0, bodyWidth])
-				.domain(rating.map(a => a["name_length_merge"])) //The domain is the list of ailines names
-				.padding(0.2)
-
-			return {
-				xScale,
-				yScale
-			}
-		}
-
-		// draw name
-		function drawLineNameChart(name, scales, config) {
-			let {
-				margin,
-				container
-			} = config;
-			let {
-				xScale,
-				yScale
-			} = scales
-			let body = container.append("g")
-				.style("transform",
-					`translate(${margin.left}px,${margin.top}px)`
-				)
-
-			var line = d3.line()
-				.x(function(d) {
-					return xScale(d['name_length_merge']);
-				})
-				.y(function(d) {
-					return yScale(parseFloat(d['mean']));
-				});
-			console.log(name);
-			body.append('path')
-				.datum(name)
-				.attr("d", line)
-				.attr("fill", "none")
-				.attr("stroke", "steelblue");
-		}
-
-		// draw axes
-		function drawAxesNameChart(name, scales, config) {
-			let {
-				xScale,
-				yScale
-			} = scales
-			let {
-				container,
-				margin,
-				height
-			} = config;
-			let axisX = d3.axisBottom(xScale)
-				.ticks(5)
-
-			container.append("g")
-				.style("transform",
-					`translate(${margin.left}px,${height - margin.bottom}px)`
-				)
-				.call(axisX)
-
-			let axisY = d3.axisLeft(yScale)
-
-			container.append("g")
-				.style("transform",
-					`translate(${margin.left}px,${margin.top}px)`
-				)
-				.call(axisY);
-		}
-
-		function installsProcessing(size, installs) {
-
-			let size_arr = [];
-			for(let i = 0; i < installs.length; i++) {
-				size_arr.push([]);
-			}
-			size.map(app => {
-				size_arr[installs.indexOf(app['Installs'])].push(app['Size Num']);
-			})
-			return size_arr;
-		}
-
-		function drawSizeChart(size) {
-			let installs = ['10-', '10+', '50+', '100+', '500+', '1,000+', '5,000+', '10,000+', '50,000+',
-				'100,000+', '500,000+', '1,000,000+', '5,000,000+',
-				'10,000,000+', '50,000,000+', '100,000,000+'
-			];
-			let data_raw = installsProcessing(size, installs);
-			let myChart = echarts.init(document.getElementById('Q3'));
-			let data = echarts.dataTool.prepareBoxplotData(data_raw);
-
-			option = {
-				title: [{
-					text: 'Question 3',
-					left: 'center',
-				}],
-				tooltip: {
-					trigger: 'item',
-					axisPointer: {
-						type: 'shadow'
-					}
-				},
-				grid: {
-					left: '10%',
-					right: '10%',
-					bottom: '15%'
-				},
-				xAxis: {
-					type: 'category',
-					name: 'Installs',
-					data: data.axisData,
-					boundaryGap: true,
-					nameGap: 30,
-					splitArea: {
-						show: false
-					},
-					axisLabel: {
-						formatter: function(value, index) {
-
-							return installs[index];
-						}
-					},
-					splitLine: {
-						show: false
-					}
-				},
-				yAxis: {
-					type: 'value',
-					name: 'Size in KB',
-					splitArea: {
-						show: true
-					}
-				},
-				series: [{
-						name: 'boxplot',
-						type: 'boxplot',
-						data: data.boxData,
-						tooltip: {
-							formatter: function(param) {
-								return [
-									'Experiment ' + param.name + ': ',
-									'upper: ' + param.data[5],
-									'Q3: ' + param.data[4],
-									'median: ' + param.data[3],
-									'Q1: ' + param.data[2],
-									'lower: ' + param.data[1]
-								].join('<br/>');
-							}
-						}
-					},
-					{
-						name: 'outlier',
-						type: 'scatter',
-						data: data.outliers
-					}
-				]
-			};
-			myChart.setOption(option);
-		}
-
-		// Q2
-		function drawRatingChart(ratings) {
-			let config = getRatingConfig();
-			let scales = getRatingScales(ratings, config);
-
-			drawBarsRatingChart(ratings, scales, config);
-			drawAxesRatingChart(ratings, scales, config);
-		}
-
-		// Config for size
-		function getRatingConfig() {
-			let width = 400;
-			let height = 400;
-			let margin = {
-				top: 10,
-				bottom: 50,
-				left: 80,
-				right: 10
-			}
-			//The body is the are that will be occupied by the bars.
-			let bodyHeight = height - margin.top - margin.bottom
-			let bodyWidth = width - margin.left - margin.right
-
-			//The container is the SVG where we will draw the chart. In our HTML is the svg tah with the id AirlinesChart
-			let container = d3.select("#Q1")
-			container
-				.attr("width", width)
-			container
-				.attr("height", height)
-
-			return {
-				width,
-				height,
-				margin,
-				bodyHeight,
-				bodyWidth,
-				container
-			}
-		}
-
-		// get scale
-		function getRatingScales(rating, config) {
-			let {
-				bodyWidth,
-				bodyHeight
-			} = config;
-			let maximunCount = d3.max(rating.map(a => parseFloat(a["mean"])))
-
-			let xScale = d3.scaleLinear()
-				.range([0, bodyWidth])
-				.domain([0, maximunCount])
-
-			let yScale = d3.scaleBand()
-				.range([0, bodyHeight])
-				.domain(rating.map(a => a["Content Rating"])) //The domain is the list of ailines names
-				.padding(0.2)
-
-			return {
-				xScale,
-				yScale
-			}
-		}
-
-		// draw bar
-		function drawBarsRatingChart(rating, scales, config) {
-			let {
-				margin,
-				container
-			} = config;
-			let {
-				xScale,
-				yScale
-			} = scales
-			let body = container.append("g")
-				.style("transform",
-					`translate(${margin.left}px,${margin.top}px)`
-				)
-
-			let bars = body.selectAll(".bar")
-				.data(rating)
-
-			//Adding a rect tag for each airline
-			bars.enter().append("rect")
-				.attr("height", yScale.bandwidth())
-				.attr("y", (d) => yScale(d["Content Rating"]))
-				.attr("width", (d) => xScale(d["mean"]))
-				.attr("fill", "#2a5599")
-		}
-
-		// draw axes
-		function drawAxesRatingChart(rating, scales, config) {
-			let {
-				xScale,
-				yScale
-			} = scales
-			let {
-				container,
-				margin,
-				height
-			} = config;
-			let axisX = d3.axisBottom(xScale)
-				.ticks(5)
-
-			container.append("g")
-				.style("transform",
-					`translate(${margin.left}px,${height - margin.bottom}px)`
-				)
-				.call(axisX)
-
-			let axisY = d3.axisLeft(yScale)
-
-			container.append("g")
-				.style("transform",
-					`translate(${margin.left}px,${margin.top}px)`
-				)
-				.call(axisY);
-		}
-
-		// draw all element
-		function drawCategoryChart(category) {
-			let config = getCategoryConfig();
-			let scales = getCategoryScales(category, config);
-
-			drawBarsCategoryChart(category, scales, config);
-			drawAxesCategoryChart(category, scales, config);
-		}
-
-		function getCategoryConfig() {
-			let width = 400;
-			let height = 400;
-			let margin = {
-				top: 10,
-				bottom: 50,
-				left: 140,
-				right: 10
-			}
-			//The body is the are that will be occupied by the bars.
-			let bodyHeight = height - margin.top - margin.bottom
-			let bodyWidth = width - margin.left - margin.right
-
-			//The container is the SVG where we will draw the chart. In our HTML is the svg tah with the id AirlinesChart
-			let container = d3.select("#Q2")
-			container
-				.attr("width", width)
-			container
-				.attr("height", height)
-
-			return {
-				width,
-				height,
-				margin,
-				bodyHeight,
-				bodyWidth,
-				container
-			}
-		}
-
-		// get scale
-		function getCategoryScales(category, config) {
-			let {
-				bodyWidth,
-				bodyHeight
-			} = config;
-			let maximunCount = d3.max(category.map(a => parseFloat(a["mean"])))
-
-			let xScale = d3.scaleLinear()
-				.range([0, bodyWidth])
-				.domain([0, maximunCount])
-
-			let yScale = d3.scaleBand()
-				.range([0, bodyHeight])
-				.domain(category.map(a => a["Category"])) //The domain is the list of ailines names
-				.padding(0.2)
-
-			return {
-				xScale,
-				yScale
-			}
-		}
-
-		// draw bar
-		function drawBarsCategoryChart(category, scales, config) {
-			let {
-				margin,
-				container
-			} = config;
-			let {
-				xScale,
-				yScale
-			} = scales
-			let body = container.append("g")
-				.style("transform",
-					`translate(${margin.left}px,${margin.top}px)`
-				)
-
-			let bars = body.selectAll(".bar")
-				.data(category)
-
-			//Adding a rect tag for each airline
-			bars.enter().append("rect")
-				.attr("height", yScale.bandwidth())
-				.attr("y", (d) => yScale(d["Category"]))
-				.attr("width", (d) => xScale(d["mean"]))
-				.attr("fill", "#2a5599")
-		}
-
-		// draw axes
-		function drawAxesCategoryChart(category, scales, config) {
-			let {
-				xScale,
-				yScale
-			} = scales
-			let {
-				container,
-				margin,
-				height
-			} = config;
-			let axisX = d3.axisBottom(xScale)
-				.ticks(5)
-
-			container.append("g")
-				.style("transform",
-					`translate(${margin.left}px,${height - margin.bottom}px)`
-				)
-				.call(axisX)
-
-			let axisY = d3.axisLeft(yScale)
-
-			container.append("g")
-				.style("transform",
-					`translate(${margin.left}px,${margin.top}px)`
-				)
-				.call(axisY);
-		}
-	</script>
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+
+    <title>Visualization Project</title>
+
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="d3.js"></script>
+    <script src="echarts.min.js"></script>
+    <script src="dataTool.min.js"></script>
+    <script src="d3-legend.min.js"></script>
+    <script src="main.js"></script>
+
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Bootstrap core CSS -->
+    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom fonts for this template -->
+    <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Varela+Round" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="css/grayscale.min.css" rel="stylesheet">
+
+  </head>
+
+  <body id="page-top">
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+      <div class="container">
+        <a class="navbar-brand js-scroll-trigger" href="#page-top">A Hot App is Born</a>
+        <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+          Menu
+          <i class="fas fa-bars"></i>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarResponsive">
+          <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+              <a class="nav-link js-scroll-trigger" href="#about">About</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link js-scroll-trigger" href="#projects">Projects</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link js-scroll-trigger" href="#signup">Contact</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Header -->
+    <header class="masthead">
+      <div class="container d-flex h-100 align-items-center">
+        <div class="mx-auto text-center">
+          <h1 class="mx-auto my-0 text-uppercase">Visualize</h1>
+          <h2 class="text-white-50 mx-auto mt-2 mb-5">Google Play Store Data</h2>
+        </div>
+      </div>
+    </header>
+
+
+    <!-- Projects Section -->
+    <section id="projects" class="projects-section bg-light">
+      <div class="container">
+
+        <!-- Featured Project Row -->
+        <div class="row align-items-center no-gutters mb-4 mb-lg-5">
+          <div class="col-xl-9 col-lg-7">
+            <svg class="img-fluid mb-3 mb-lg-0" id="Q1"></svg>
+          </div>
+          <div class="col-xl-3 col-lg-5">
+            <div class="featured-text text-center text-lg-left">
+              <h4>Find target users.</h4>
+              <p class="text-black-50 mb-0">People of which age download the App mostly. Everyone 10+, Teen and Mature 17+ have highest number of reviews compared with other groups. We should consider them as our potential target users if we want to build a popular app.
+</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="row align-items-center no-gutters mb-4 mb-lg-5">
+          <div class="col-xl-9 col-lg-7">
+            <svg class="img-fluid mb-3 mb-lg-0" id="Q2"></svg>
+          </div>
+          <div class="col-xl-3 col-lg-5">
+            <div class="featured-text text-center text-lg-left">
+              <h4>Find target users’ preferred category.</h4>
+              <p class="text-black-50 mb-0">From the second graph, we can see the top 5 popular genres. We need to pay more attention on these genres if we want to create a propular App.
+
+</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="row align-items-center no-gutters mb-4 mb-lg-5">
+          <div class="col-xl-9 col-lg-7">
+                        <svg class="img-fluid mb-3 mb-lg-0" id="Q3"></svg>
+
+            <!-- <div id="Q3" style="width: 800px;height:400px;"></div> -->
+          </div>
+          <div class="col-xl-3 col-lg-5">
+            <div class="featured-text text-center text-lg-left">
+              <h4>Detailed analysis of target users’ preferred category.</h4>
+              <p class="text-black-50 mb-0">If the company want to develop an App which targets users are Mature 17+, they should consider News & Magazines, if they want their target users to be Everyone 10+, Game is the genre they want to consider, and if their target users are Teen, it’s better to choose Social genre. 
+
+
+</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="row align-items-center no-gutters mb-4 mb-lg-5">
+          <div class="col-xl-9 col-lg-7">
+            <svg class="img-fluid mb-3 mb-lg-0" id="Q4"></svg>
+          </div>
+          <div class="col-xl-3 col-lg-5">
+            <div class="featured-text text-center text-lg-left">
+              <h4>Popularity and names length.</h4>
+              <p class="text-black-50 mb-0">Tt’s better to give our App a name with short name with 1 or 2 letters, or 8 letters.
+
+</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="row align-items-center no-gutters mb-4 mb-lg-5">
+          <div class="col-xl-9 col-lg-7">
+            <svg class="img-fluid mb-3 mb-lg-0" id="Q5"></svg>
+          </div>
+          <div class="col-xl-3 col-lg-5">
+            <div class="featured-text text-center text-lg-left">
+              <h4>Correlation between Popularity and price.</h4>
+              <p class="text-black-50 mb-0">Free apps definitely have tremendously more downloads compare with charged Apps. And most users purchased 5$ or less cost Apps. Free App and low price App is more popular.
+
+</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="row align-items-center no-gutters mb-4 mb-lg-5">
+          <div class="col-xl-9 col-lg-7">
+              <svg class="img-fluid mb-3 mb-lg-0" id="Q6"></svg>
+          </div>
+          <div class="col-xl-3 col-lg-5">
+            <div class="featured-text text-center text-lg-left">
+              <h4>Rating and popularity.</h4>
+              <p class="text-black-50 mb-0">Users tend to try an App with high rating even without a lot of downloads. Users prefer higher rating Apps when they have more than one choice.
+
+</p>
+            </div>
+          </div>
+        </div>
+
+      
+      </div>
+    </section>
+
+    <!-- Signup Section -->
+    <section id="signup" class="signup-section">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-10 col-lg-8 mx-auto text-center">
+
+            <i class="far fa-paper-plane fa-2x mb-2 text-white"></i>
+            <h2 class="text-white mb-5">For more information...</h2>
+
+            <form class="form-inline d-flex">
+              <input type="email" class="form-control flex-fill mr-0 mr-sm-2 mb-3 mb-sm-0" id="inputEmail" placeholder="Enter email address...">
+              <button type="submit" class="btn btn-primary mx-auto">Subscribe</button>
+            </form>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="contact-section bg-black">
+      <div class="container">
+
+        <div class="row">
+
+          <div class="col-md-4 mb-3 mb-md-0">
+            <div class="card py-4 h-100">
+              <div class="card-body text-center">
+                <i class="fas fa-map-marked-alt text-primary mb-2"></i>
+                <h4 class="text-uppercase m-0">Team</h4>
+                <hr class="my-4">
+                <div class="small text-black-50">Tandon School of Engineering, NYU</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4 mb-3 mb-md-0">
+            <div class="card py-4 h-100">
+              <div class="card-body text-center">
+                <i class="fas fa-envelope text-primary mb-2"></i>
+                <h4 class="text-uppercase m-0">Email</h4>
+                <hr class="my-4">
+                <div class="small text-black-50">
+                  <a href="#">yc3166@nyu.edu</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4 mb-3 mb-md-0">
+            <div class="card py-4 h-100">
+              <div class="card-body text-center">
+                <i class="fas fa-mobile-alt text-primary mb-2"></i>
+                <h4 class="text-uppercase m-0">Phone</h4>
+                <hr class="my-4">
+                <div class="small text-black-50">+1 (347) 556-3784</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-black small text-center text-white-50">
+      <div class="container">
+        Copyright &copy; Your Website 2018
+      </div>
+    </footer>
+
+    <!-- Bootstrap core JavaScript -->
+    <script src="vendor/jquery/jquery.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Plugin JavaScript -->
+    <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+
+    <!-- Custom scripts for this template -->
+    <script src="js/grayscale.min.js"></script>
+
+  </body>
 
 </html>
